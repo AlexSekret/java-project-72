@@ -2,9 +2,6 @@ package hexlet.code;
 
 import io.javalin.Javalin;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 public class App {
     public static void main(String[] args) {
         Javalin app = getApp();
