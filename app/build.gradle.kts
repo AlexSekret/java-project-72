@@ -11,8 +11,9 @@ plugins {
     checkstyle
     //use JaCoCo plugin
     jacoco
-    id("io.freefair.lombok") version "8.10"
-    id ("com.adarshr.test-logger") version "4.0.0"
+    id("io.freefair.lombok") version "8.11"
+    id("com.adarshr.test-logger") version "4.0.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "hexlet.code"
@@ -26,9 +27,11 @@ application {
     mainClass = "hexlet.code.App"
 }
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    annotationProcessor ("info.picocli:picocli-codegen:4.7.6")
+    implementation("io.javalin:javalin:6.4.0")
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
+    implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 }
 testlogger {
     theme = ThemeType.MOCHA_PARALLEL // project level
