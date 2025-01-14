@@ -32,6 +32,8 @@ dependencies {
     implementation("io.javalin:javalin:6.4.0")
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
     implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
+    implementation("com.zaxxer:HikariCP:6.2.1")
+    implementation("com.h2database:h2:2.2.220")
 }
 testlogger {
     theme = ThemeType.MOCHA_PARALLEL // project level
