@@ -30,10 +30,12 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("io.javalin:javalin:6.4.0")
+    implementation("io.javalin:javalin-rendering:6.1.3")
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
     implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
     implementation("com.zaxxer:HikariCP:6.2.1")
     implementation("com.h2database:h2:2.2.220")
+    implementation("gg.jte:jte:3.1.16")
 }
 testlogger {
     theme = ThemeType.MOCHA_PARALLEL // project level
