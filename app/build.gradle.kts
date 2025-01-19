@@ -36,6 +36,9 @@ dependencies {
     implementation("com.zaxxer:HikariCP:6.2.1")
     implementation("com.h2database:h2:2.2.220")
     implementation("gg.jte:jte:3.1.16")
+    // https://mvnrepository.com/artifact/org.postgresql/postgresql
+    implementation("org.postgresql:postgresql:42.7.5")
+
 }
 testlogger {
     theme = ThemeType.MOCHA_PARALLEL // project level
