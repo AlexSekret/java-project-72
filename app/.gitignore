@@ -5,7 +5,9 @@ build/
 !**/src/test/**/build/
 ### GigaIDE
 .gigaide
-
+### JTE classes
+jte-classes
+jte-classes/**
 ### IntelliJ IDEA ###
 .idea
 .idea/modules.xml

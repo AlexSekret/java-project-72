@@ -2,6 +2,8 @@ package hexlet.code.repository;
 
 import hexlet.code.model.Url;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -14,14 +16,14 @@ public class UrlRepository extends BaseRepository {
 
     public static void save(Url url) throws SQLException {
         String sqlStatement = "INSERT INTO urls (name, created_at) VALUES (?, ?)";
-        try (var conn = dataSource.getConnection();
+        try (Connection conn = dataSource.getConnection();
              var preparedStatement = conn.prepareStatement(sqlStatement, Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setString(1, url.getName());
-            var createdAt = LocalDateTime.now();
+            LocalDateTime createdAt = LocalDateTime.now();
             preparedStatement.setTimestamp(2, Timestamp.valueOf(createdAt));
             preparedStatement.executeUpdate();
 
-            var generatedKeys = preparedStatement.getGeneratedKeys();
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
             if (generatedKeys.next()) {
                 url.setId(generatedKeys.getLong(1));
                 url.setCreatedAt(Timestamp.valueOf(createdAt));
@@ -32,19 +34,47 @@ public class UrlRepository extends BaseRepository {
     }
 
 
-    public static List<Url> search() {
-        return List.of();
+    public static Optional<Url> search(String name) throws SQLException {
+        String sql = "SELECT * FROM urls WHERE name LIKE ?";
+        try (Connection conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+            preparedStatement.setString(1, name);
+            var resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                var id = resultSet.getLong("id");
+                var createdAt = resultSet.getTimestamp("created_at");
+                var url = new Url(name);
+                url.setId(id);
+                url.setCreatedAt(createdAt);
+                return Optional.of(url);
+            }
+            return Optional.empty();
+        }
     }
 
-    public static Optional<Url> find() {
-        return Optional.empty();
+    public static Optional<Url> find(Long id) throws SQLException {
+        String sql = "SELECT * FROM urls WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+            preparedStatement.setLong(1, id);
+            var resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                var name = resultSet.getString("name");
+                var createdAt = resultSet.getTimestamp("created_at");
+                var url = new Url(name);
+                url.setId(id);
+                url.setCreatedAt(createdAt);
+                return Optional.of(url);
+            }
+            return Optional.empty();
+        }
     }
 
     public static List<Url> getEntities() throws SQLException {
         var sql = "SELECT * FROM urls";
         try (var conn = dataSource.getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-            var resultSet = stmt.executeQuery();
+             var prepareStatement = conn.prepareStatement(sql)) {
+            var resultSet = prepareStatement.executeQuery();
             var result = new ArrayList<Url>();
             while (resultSet.next()) {
                 var id = resultSet.getLong("id");

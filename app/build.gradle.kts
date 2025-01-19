@@ -38,6 +38,7 @@ dependencies {
     implementation("gg.jte:jte:3.1.16")
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
     implementation("org.postgresql:postgresql:42.7.5")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
 
 }
 testlogger {

@@ -5,9 +5,10 @@ import com.zaxxer.hikari.HikariDataSource;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.resolve.ResourceCodeResolver;
-import hexlet.code.model.Url;
+import hexlet.code.controller.RootController;
+import hexlet.code.controller.UrlsController;
+
 import hexlet.code.repository.BaseRepository;
-import hexlet.code.repository.UrlRepository;
 import io.javalin.Javalin;
 import io.javalin.rendering.template.JavalinJte;
 
@@ -18,6 +19,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
+
 
 public class App {
     public static void main(String[] args) throws SQLException, IOException {
@@ -41,12 +43,13 @@ public class App {
             config.bundledPlugins.enableDevLogging();
             config.fileRenderer(new JavalinJte(createTemplateEngine()));
         });
-        app.get("/", ctx -> ctx.render("main.jte"));
-        app.get("/urls", ctx -> ctx.result(UrlRepository.getEntities().toString()));
-        app.post("/urls", ctx -> {
-            UrlRepository.save(new Url("https://www.i-dont understand anything.ru"));
-            ctx.redirect("/urls");
-        });
+
+        app.get("/", RootController::index);
+        app.get("/urls", UrlsController::index);
+        app.post("/urls", UrlsController::addUrl);
+        app.get("/urls/{id}", UrlsController::show);
+        app.post("/urls/{id}/checks", UrlsController::check);
+
         return app;
     }
 
