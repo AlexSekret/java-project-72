@@ -22,9 +22,15 @@ import java.util.stream.Collectors;
 
 
 public class App {
-    public static void main(String[] args) throws SQLException, IOException {
-        Javalin app = getApp();
-        app.start(getPort());
+    //Перечитать теорию про обработку исключений.
+    //Реализовать нормальную обработку исключений.
+    public static void main(String[] args) {
+        try {
+            Javalin app = getApp();
+            app.start(getPort());
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Javalin getApp() throws IOException, SQLException {

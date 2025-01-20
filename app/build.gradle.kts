@@ -1,4 +1,6 @@
 import com.adarshr.gradle.testlogger.theme.ThemeType
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     id("java")
@@ -30,15 +32,23 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("io.javalin:javalin:6.4.0")
-    implementation("io.javalin:javalin-rendering:6.1.3")
+    implementation("io.javalin:javalin-rendering:6.4.0")
+    // https://mvnrepository.com/artifact/io.javalin/javalin-bundle
+    implementation("io.javalin:javalin-bundle:6.4.0")
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
     implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
     implementation("com.zaxxer:HikariCP:6.2.1")
-    implementation("com.h2database:h2:2.2.220")
+    implementation("com.h2database:h2:2.3.232")
     implementation("gg.jte:jte:3.1.16")
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
     implementation("org.postgresql:postgresql:42.7.5")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    // https://mvnrepository.com/artifact/org.assertj/assertj-core
+    testImplementation("org.assertj:assertj-core:3.27.3")
+    // https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+
 
 }
 testlogger {
@@ -46,6 +56,13 @@ testlogger {
 }
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        exceptionFormat = TestExceptionFormat.FULL
+        events = mutableSetOf(TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
+        // showStackTraces = true
+        // showCauses = true
+        showStandardStreams = true
+    }
 }
 //для интерактивнного ввода в консоль Gradle
 tasks.getByName("run", JavaExec::class) {

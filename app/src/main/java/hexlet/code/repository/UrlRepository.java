@@ -59,9 +59,9 @@ public class UrlRepository extends BaseRepository {
             preparedStatement.setLong(1, id);
             var resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                var name = resultSet.getString("name");
-                var createdAt = resultSet.getTimestamp("created_at");
-                var url = new Url(name);
+                String name = resultSet.getString("name");
+                Timestamp createdAt = resultSet.getTimestamp("created_at");
+                Url url = new Url(name);
                 url.setId(id);
                 url.setCreatedAt(createdAt);
                 return Optional.of(url);
@@ -71,16 +71,16 @@ public class UrlRepository extends BaseRepository {
     }
 
     public static List<Url> getEntities() throws SQLException {
-        var sql = "SELECT * FROM urls";
+        String sql = "SELECT * FROM urls";
         try (var conn = dataSource.getConnection();
              var prepareStatement = conn.prepareStatement(sql)) {
-            var resultSet = prepareStatement.executeQuery();
-            var result = new ArrayList<Url>();
+            ResultSet resultSet = prepareStatement.executeQuery();
+            ArrayList<Url> result = new ArrayList<Url>();
             while (resultSet.next()) {
-                var id = resultSet.getLong("id");
-                var name = resultSet.getString("name");
-                var createdAt = resultSet.getTimestamp("created_at");
-                var url = new Url(name);
+                long id = resultSet.getLong("id");
+                String name = resultSet.getString("name");
+                Timestamp createdAt = resultSet.getTimestamp("created_at");
+                Url url = new Url(name);
                 url.setId(id);
                 url.setCreatedAt(createdAt);
                 result.add(url);

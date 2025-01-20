@@ -7,7 +7,6 @@ import hexlet.code.model.Url;
 import hexlet.code.repository.UrlRepository;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
-import io.javalin.validation.ValidationException;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -25,9 +24,8 @@ public class UrlsController {
             String rawURI = ctx.formParam("url");
             URL url = URI.create(rawURI).toURL();
             String protocol = url.getProtocol();
-            String host = url.getHost();
-            int port = url.getPort();
-            String name = protocol + "://" + host + (port != -1 ? (":" + port) : "");
+            String authority = url.getAuthority();
+            String name = protocol + "://" + authority;
             if (UrlRepository.search(name).isPresent()) {
                 ctx.sessionAttribute("flash", "Страница уже существует");
                 ctx.redirect("/");
@@ -36,7 +34,7 @@ public class UrlsController {
                 ctx.sessionAttribute("flash", "Страница успешно добавлена");
                 ctx.redirect("/urls");
             }
-        } catch (MalformedURLException | IllegalArgumentException | NullPointerException | ValidationException e) {
+        } catch (MalformedURLException | IllegalArgumentException | NullPointerException e) {
             ctx.sessionAttribute("flash", "Некорректный URL");
             ctx.redirect("/");
         } catch (SQLException e) {
@@ -56,7 +54,7 @@ public class UrlsController {
     public static void show(Context ctx) throws SQLException {
         Long id = ctx.pathParamAsClass("id", Long.class).get();
         Url url = UrlRepository.find(id)
-                .orElseThrow(() -> new NotFoundResponse("Entity with id = " + id + " not found"));
+                .orElseThrow(() -> new NotFoundResponse("URL with id = " + id + " not found"));
         UrlPage page = new UrlPage(url);
         ctx.render("urls/show.jte", model("page", page));
     }
