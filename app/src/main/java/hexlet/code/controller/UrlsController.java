@@ -1,19 +1,16 @@
 package hexlet.code.controller;
 
-
 import hexlet.code.dto.UrlPage;
 import hexlet.code.dto.UrlsPage;
 import hexlet.code.model.Url;
 import hexlet.code.repository.UrlRepository;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
-
 import static io.javalin.rendering.template.TemplateUtil.model;
 
 
