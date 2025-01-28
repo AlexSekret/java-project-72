@@ -1,4 +1,8 @@
 @import hexlet.code.dto.UrlsPage
+@import java.time.format.DateTimeFormatter
+@import java.time.format.FormatStyle;
+
+
 @param UrlsPage page
 @template.layout.page(
 page = page,
@@ -24,8 +28,14 @@ content = @`
                         <a href="/urls/${url.getId()}">${url.getName()}</a>
                     </td>
                     <td>
+                        @if(!(url.getUrlChecks().isEmpty()))
+                            ${DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(url.getLastUrlCheck().getCreatedAt().toLocalDateTime())}
+                        @endif
                     </td>
                     <td>
+                        @if(!(url.getUrlChecks().isEmpty()))
+                            ${url.getLastUrlCheck().getStatusCode()}
+                        @endif
                     </td>
                 </tr>
             @endfor

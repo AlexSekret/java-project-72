@@ -47,8 +47,11 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.27.3")
     // https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // https://mvnrepository.com/artifact/com.konghq/unirest-java
+    implementation("com.konghq:unirest-java:3.14.5")
+    // https://mvnrepository.com/artifact/org.jsoup/jsoup
+    implementation("org.jsoup:jsoup:1.18.3")
 
 }
 testlogger {

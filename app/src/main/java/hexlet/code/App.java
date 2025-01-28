@@ -54,7 +54,7 @@ public class App {
         app.get("/urls", UrlsController::index);
         app.post("/urls", UrlsController::addUrl);
         app.get("/urls/{id}", UrlsController::show);
-        app.post("/urls/{id}/checks", UrlsController::check);
+        app.post("/urls/{id}/check", UrlsController::check);
 
         return app;
     }

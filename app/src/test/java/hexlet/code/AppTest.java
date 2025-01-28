@@ -2,15 +2,24 @@ package hexlet.code;
 
 
 import hexlet.code.model.Url;
+import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
+import kong.unirest.HttpStatus;
 import okhttp3.Response;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -21,15 +30,47 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 class AppTest {
-    public static Javalin app;
+    static Javalin app;
+    static MockWebServer mockServer;
+    static String baseUrl;
+
+    private static Path getFixturePath(String fileName) {
+        return Paths.get("src", "test", "resources", "fixtures", fileName)
+                .toAbsolutePath().normalize();
+    }
+
+    private static String readFixture(String fileName) throws Exception {
+        Path filePath = getFixturePath(fileName);
+        return Files.readString(filePath).trim();
+    }
+
+    @BeforeAll
+    static void startMockWebServer() throws Exception {
+        mockServer = new MockWebServer();
+        MockResponse goodMockedResponse = new MockResponse()
+                .setBody(readFixture("goodCase.html"));
+        mockServer.enqueue(goodMockedResponse);
+        mockServer.enqueue(goodMockedResponse);
+        mockServer.start();
+        baseUrl = mockServer.url("/").toString().replaceAll("/$", "");
+    }
+
+    @AfterAll
+    static void tearDown() throws IOException {
+        // Остановка приложения и мок-сервера после всех тестов
+        if (app != null) {
+            app.stop();
+        }
+        mockServer.shutdown();
+    }
 
     @BeforeEach
     void setUp() throws SQLException, IOException {
         app = App.getApp();
     }
 
-    @AfterAll
-    static void teardown() {
+    @AfterEach
+    void tearDownApp() {
         // Остановка приложения после всех тестов
         if (app != null) {
             app.stop();
@@ -50,65 +91,62 @@ class AppTest {
         JavalinTest.test(app, (server, client) -> {
             Response response = client.post("/urls", "url=https://google.com");
             assertThat(response.code()).isEqualTo(200);
-            assertEquals(true, UrlRepository.search("https://google.com").isPresent());
+            assertTrue(UrlRepository.search("https://google.com").isPresent());
             assertThat(response.body().string()).contains("https://google.com");
-
+            assertEquals(1, UrlRepository.search("https://google.com").get().getId());
+            assertEquals(1, UrlRepository.getEntities().size());
             var response2 = client.post("/urls", "url=https://google.com:8080");
-            assertEquals(true, UrlRepository.search("https://google.com:8080").isPresent());
+            assertTrue(UrlRepository.search("https://google.com:8080").isPresent());
             assertThat(response2.code()).isEqualTo(200);
             assertThat(response2.body().string()).contains("https://google.com:8080");
+            assertEquals(2, UrlRepository.getEntities().size());
+            assertEquals(2, UrlRepository.search("https://google.com:8080").get().getId());
         });
     }
 
     @Test
-    void testUrlControllerHandlers() {
+    void testRedirectAfterAddCorrectUrlTwice() {
         JavalinTest.test(app, (server, client) -> {
-            Response response = client.post("/urls", "url=https://google.com");
-            Url expected = new Url("https://google.com");
-            Url url = UrlRepository.search("https://google.com").get();
-            expected.setId(1L);
-            expected.setCreatedAt(url.getCreatedAt());
-            assertEquals(expected, url);
-            Url url2 = UrlRepository.find(1L).get();
-            assertEquals(expected, url2);
-            Optional<Url> url3 = UrlRepository.find(10L);
-            assertTrue(url3.isEmpty());
+            client.post("/urls", "url=https://google.com");
+            assertEquals(1, UrlRepository.getEntities().size());
+            var response = client.post("/urls", "url=https://google.com");
+            assertEquals(1, UrlRepository.getEntities().size());
+            assertTrue(UrlRepository.search("https://google.com").isPresent());
+            //при добавлении URL-дубля происходит редирект на "/"
+            //после редиректа сервер автоматически возвращает код 200 вместо 301
+            assertEquals(HttpStatus.OK, response.code());
         });
     }
 
     @Test
-    void testAddCorrectUrlTwice() {
-        JavalinTest.test(app, (server, client) -> {
-            Response response = client.post("/urls", "url=https://google.com");
-            var response2 = client.post("/urls", "url=https://google.com");
-            assertThat(response2.isRedirect());
-        });
-    }
-
-    @Test
-    void testAddIncorrectUrl() {
+    void testRedirectAfterAddIncorrectUrl() {
         JavalinTest.test(app, (server, client) -> {
             var response = client.post("/urls", "url=1111");
-            assertThat(response.isRedirect());
+            assertEquals(0, UrlRepository.getEntities().size());
+            //при добавлении некорректного URL происходит редирект на "/"
+            //после редиректа сервер автоматически возвращает код 200 вместо 301
+            assertEquals(HttpStatus.OK, response.code());
         });
     }
 
     @Test
     void testUrlsPageWhenFewURLsWasAdded() {
         JavalinTest.test(app, (server, client) -> {
-            Response response = client.post("/urls", "url=https://google.com");
+            client.post("/urls", "url=https://google.com");
             Response response2 = client.post("/urls", "url=https://noodle.com:8080");
             List<Url> urls = UrlRepository.getEntities();
             String body = response2.body().string();
+            assertEquals(2, UrlRepository.getEntities().size());
             assertTrue(urls.stream().allMatch(url -> body.contains(url.getName())));
         });
     }
 
     @Test
-    void testShowUrlByIDPage() {
+    void testShowUrlPageByID() {
         JavalinTest.test(app, (server, client) -> {
-            Response response = client.post("/urls", "url=https://google.com");
-            Response response2 = client.post("/urls", "url=https://noodle.com:8080");
+            client.post("/urls", "url=https://google.com");
+            client.post("/urls", "url=https://noodle.com:8080");
+            assertEquals(2, UrlRepository.getEntities().size());
             List<Url> urls = UrlRepository.getEntities();
             for (var url : urls) {
                 String resp = client.get("/urls/" + url.getId()).body().string();
@@ -120,17 +158,52 @@ class AppTest {
     }
 
     @Test
-    void testShowUrlByIDPageNotFound() {
+    void testShowUrlPageByIDNotFound() {
         JavalinTest.test(app, (server, client) -> {
-            Response response1 = client.post("/urls", "url=https://google.com");
-            var id = 33L;
-            var notFound = 404;
-            String expected = "URL with id = " + id + " not found";
-            Optional<Url> url = UrlRepository.find(id);
+            client.post("/urls", "url=https://google.com");
+            var incorrectID = 33L;
+            String notFoundMessage = "URL with id = " + incorrectID + " not found";
+            Optional<Url> url = UrlRepository.find(incorrectID);
             assertTrue(url.isEmpty());
-            var response = client.get("/urls/" + id);
-            assertEquals(expected, response.body().string());
-            assertEquals(notFound, response.code());
+            var response = client.get("/urls/" + incorrectID);
+            assertEquals(notFoundMessage, response.body().string());
+            assertEquals(HttpStatus.NOT_FOUND, response.code());
+        });
+    }
+
+    @Test
+    void testCheckCorrectUrlIsSuccess() throws SQLException {
+        JavalinTest.test(app, (server, client) -> {
+            client.post("/urls", "url=" + baseUrl);
+            Long id = UrlRepository.search(baseUrl).get().getId();
+            var response = client.post("/urls/" + id + "/check");
+            var body = response.body().string();
+            assertThat(response.code()).isEqualTo(200);
+            assertTrue(body.contains("<td>1</td>"));
+            assertTrue(body.contains("<td>200</td>"));
+            assertTrue(body.contains("<td>Тестовый заголовок с тегом title</td>"));
+            assertTrue(body.contains("<td>Тестовый заголовок первого уровня</td>"));
+            assertTrue(body.contains("<td>Описание description</td>"));
+            var checksNumber = UrlCheckRepository.getEntities(id).size();
+            assertEquals(checksNumber, 1);
+            var response2 = client.post("/urls/" + id + "/check");
+            var body2 = response2.body().string();
+            assertThat(response2.code()).isEqualTo(200);
+            assertTrue(body2.contains("<td>2</td>"));
+            assertTrue(body2.contains("<td>200</td>"));
+            assertTrue(body2.contains("<td>Тестовый заголовок с тегом title</td>"));
+            assertTrue(body2.contains("<td>Тестовый заголовок первого уровня</td>"));
+            assertTrue(body2.contains("<td>Описание description</td>"));
+            var url = UrlRepository.find(id).get();
+            var urlChecks = UrlCheckRepository.getEntities(id);
+            for (var urlCheck : urlChecks) {
+                url.addUrlCheck(urlCheck);
+            }
+            var expectedH1 = "Тестовый заголовок первого уровня";
+            assertEquals(2, url.getLastUrlCheck().getId());
+            assertEquals(expectedH1, url.getLastUrlCheck().getH1());
+            var checksNumber2 = UrlCheckRepository.getEntities(id).size();
+            assertEquals(checksNumber2, 2);
         });
     }
 }

@@ -1,14 +1,13 @@
-@import hexlet.code.dto.UrlPage
 @import java.time.format.DateTimeFormatter
 @import java.time.format.FormatStyle
-@param UrlPage page
+@import hexlet.code.dto.UrlCheckPage
+@param UrlCheckPage page
 
 @template.layout.page(
 page = page,
 content = @`
     <div class="container-lg mt-5">
         <h1>Сайт: ${page.getUrl().getName()}</h1>
-
         <table class="table table-bordered table-hover mt-3">
             <tbody>
             <tr>
@@ -27,7 +26,7 @@ content = @`
         </table>
 
         <h2 class="mt-5">Проверки</h2>
-        <form method="post" action="/urls/1/checks">
+        <form method="post" action="/urls/${page.getUrl().getId()}/check">
             <button type="submit" class="btn btn-primary">Запустить проверку</button>
         </form>
 
@@ -42,28 +41,20 @@ content = @`
                 <th class="col-2">Дата проверки</th>
             </tr>
             </thead>
-            <tbody>
-            <tr>
-                <td>
-                    Здесь должен быть ID
-                </td>
-                <td>
-                    Код ответа
-                </td>
-                <td>
-                    заголовок
-                </td>
-                <td>
-                    заголовок первого уровня H1
-                </td>
-                <td>
-                    описание
-                </td>
-                <td>
-                    Дата проверки
-                </td>
-            </tr>
-            </tbody>
+            @if(!(page.getUrlChecks().isEmpty()))
+                <tbody>
+                @for(var check : page.getUrlChecks())
+                    <tr>
+                        <td>${check.getId()}</td>
+                        <td>${check.getStatusCode()}</td>
+                        <td>${check.getTitle()}</td>
+                        <td>${check.getH1()}</td>
+                        <td>${check.getDescription()}</td>
+                        <td>${DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(check.getCreatedAt().toLocalDateTime())}</td>
+                    </tr>
+                @endfor
+                </tbody>
+            @endif
         </table>
     </div>
 `

@@ -33,7 +33,6 @@ public class UrlRepository extends BaseRepository {
         }
     }
 
-
     public static Optional<Url> search(String name) throws SQLException {
         String sql = "SELECT * FROM urls WHERE name LIKE ?";
         try (Connection conn = dataSource.getConnection();
