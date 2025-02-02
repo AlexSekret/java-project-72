@@ -6,7 +6,6 @@ import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
-import hexlet.code.utils.Util;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import kong.unirest.HttpResponse;
@@ -90,11 +89,10 @@ public class UrlsController {
                     .orElseThrow(() -> new NotFoundResponse("URL with id = " + urlId + " not found"));
             HttpResponse<String> response = Unirest.get(url.getName()).asString();
             Document body = Jsoup.parse(response.getBody());
-
             int responseStatus = response.getStatus();
-            String h1 = Util.getFirstElementText(body, "h1");
-            String title = Util.getFirstElementText(body, "title");
-            String description = Util.getMetaContent(body);
+            String h1 = body.selectFirst("h1").text();
+            String title = body.title();
+            String description = body.selectFirst("meta[name=description]").attr("content");
 
             UrlCheck urlCheck = new UrlCheck(h1, responseStatus, title, description);
             url.addUrlCheck(urlCheck);
