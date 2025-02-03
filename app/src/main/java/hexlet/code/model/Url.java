@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 @ToString
 @EqualsAndHashCode
-public class Url {
+public final class Url {
     private Long id;
     @ToString.Include
     private String name;
