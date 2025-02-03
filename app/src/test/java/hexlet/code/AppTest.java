@@ -4,6 +4,7 @@ package hexlet.code;
 import hexlet.code.model.Url;
 import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
+import hexlet.code.utils.NamedRoutes;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import kong.unirest.HttpStatus;
@@ -67,6 +68,7 @@ class AppTest {
     @BeforeEach
     void setUp() throws SQLException, IOException {
         app = App.getApp();
+
     }
 
     @AfterEach
@@ -80,8 +82,8 @@ class AppTest {
     @Test
     void testMainPage() {
         JavalinTest.test(app, (server, client) -> {
-            assertThat(client.get("/").code()).isEqualTo(200);
-            assertThat(client.get("/").body().string())
+            assertThat(client.get(NamedRoutes.root()).code()).isEqualTo(200);
+            assertThat(client.get(NamedRoutes.root()).body().string())
                     .contains("<h1 class=\"display-3 mb-0\">Анализатор страниц</h1>");
         });
     }
@@ -89,13 +91,13 @@ class AppTest {
     @Test
     void testAddCorrectUrl() {
         JavalinTest.test(app, (server, client) -> {
-            Response response = client.post("/urls", "url=https://google.com");
+            Response response = client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
             assertThat(response.code()).isEqualTo(200);
             assertTrue(UrlRepository.search("https://google.com").isPresent());
             assertThat(response.body().string()).contains("https://google.com");
             assertEquals(1, UrlRepository.search("https://google.com").get().getId());
             assertEquals(1, UrlRepository.getEntities().size());
-            var response2 = client.post("/urls", "url=https://google.com:8080");
+            var response2 = client.post(NamedRoutes.urlsIndex(), "url=https://google.com:8080");
             assertTrue(UrlRepository.search("https://google.com:8080").isPresent());
             assertThat(response2.code()).isEqualTo(200);
             assertThat(response2.body().string()).contains("https://google.com:8080");
@@ -107,9 +109,9 @@ class AppTest {
     @Test
     void testRedirectAfterAddCorrectUrlTwice() {
         JavalinTest.test(app, (server, client) -> {
-            client.post("/urls", "url=https://google.com");
+            client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
             assertEquals(1, UrlRepository.getEntities().size());
-            var response = client.post("/urls", "url=https://google.com");
+            var response = client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
             assertEquals(1, UrlRepository.getEntities().size());
             assertTrue(UrlRepository.search("https://google.com").isPresent());
             //при добавлении URL-дубля происходит редирект на "/"
@@ -121,7 +123,7 @@ class AppTest {
     @Test
     void testRedirectAfterAddIncorrectUrl() {
         JavalinTest.test(app, (server, client) -> {
-            var response = client.post("/urls", "url=1111");
+            var response = client.post(NamedRoutes.urlsIndex(), "url=1111");
             assertEquals(0, UrlRepository.getEntities().size());
             //при добавлении некорректного URL происходит редирект на "/"
             //после редиректа сервер автоматически возвращает код 200 вместо 301
@@ -132,8 +134,8 @@ class AppTest {
     @Test
     void testUrlsPageWhenFewURLsWasAdded() {
         JavalinTest.test(app, (server, client) -> {
-            client.post("/urls", "url=https://google.com");
-            Response response2 = client.post("/urls", "url=https://noodle.com:8080");
+            client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
+            Response response2 = client.post(NamedRoutes.urlsIndex(), "url=https://noodle.com:8080");
             List<Url> urls = UrlRepository.getEntities();
             String body = response2.body().string();
             assertEquals(2, UrlRepository.getEntities().size());
@@ -144,12 +146,12 @@ class AppTest {
     @Test
     void testShowUrlPageByID() {
         JavalinTest.test(app, (server, client) -> {
-            client.post("/urls", "url=https://google.com");
-            client.post("/urls", "url=https://noodle.com:8080");
+            client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
+            client.post(NamedRoutes.urlsIndex(), "url=https://noodle.com:8080");
             assertEquals(2, UrlRepository.getEntities().size());
             List<Url> urls = UrlRepository.getEntities();
             for (var url : urls) {
-                String resp = client.get("/urls/" + url.getId()).body().string();
+                String resp = client.get(NamedRoutes.urlShow(url.getId())).body().string();
                 String name = url.getName();
                 assertThat(resp).contains(name);
                 assertThat(resp).contains("<td>" + url.getId() + "</td>");
@@ -160,12 +162,12 @@ class AppTest {
     @Test
     void testShowUrlPageByIDNotFound() {
         JavalinTest.test(app, (server, client) -> {
-            client.post("/urls", "url=https://google.com");
+            client.post(NamedRoutes.urlsIndex(), "url=https://google.com");
             var incorrectID = 33L;
             String notFoundMessage = "URL with id = " + incorrectID + " not found";
             Optional<Url> url = UrlRepository.find(incorrectID);
             assertTrue(url.isEmpty());
-            var response = client.get("/urls/" + incorrectID);
+            var response = client.get(NamedRoutes.urlShow(incorrectID));
             assertEquals(notFoundMessage, response.body().string());
             assertEquals(HttpStatus.NOT_FOUND, response.code());
         });
@@ -174,9 +176,9 @@ class AppTest {
     @Test
     void testCheckCorrectUrlIsSuccess() throws SQLException {
         JavalinTest.test(app, (server, client) -> {
-            client.post("/urls", "url=" + baseUrl);
+            client.post(NamedRoutes.urlsIndex(), "url=" + baseUrl);
             Long id = UrlRepository.search(baseUrl).get().getId();
-            var response = client.post("/urls/" + id + "/check");
+            var response = client.post(NamedRoutes.urlCheck(id));
             var body = response.body().string();
             assertThat(response.code()).isEqualTo(200);
             assertTrue(body.contains("<td>1</td>"));
@@ -186,7 +188,7 @@ class AppTest {
             assertTrue(body.contains("<td>Описание description</td>"));
             var checksNumber = UrlCheckRepository.getEntities(id).size();
             assertEquals(checksNumber, 1);
-            var response2 = client.post("/urls/" + id + "/check");
+            var response2 = client.post(NamedRoutes.urlCheck(id));
             var body2 = response2.body().string();
             assertThat(response2.code()).isEqualTo(200);
             assertTrue(body2.contains("<td>2</td>"));

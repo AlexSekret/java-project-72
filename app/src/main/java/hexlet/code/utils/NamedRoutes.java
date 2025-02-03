@@ -22,6 +22,6 @@ public final class NamedRoutes {
     }
 
     public static String urlCheck(String s) {
-        return "/urls/" + s + "/check";
+        return "/urls/" + s + "/checks";
     }
 }
