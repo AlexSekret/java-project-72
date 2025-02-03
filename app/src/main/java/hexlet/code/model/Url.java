@@ -40,9 +40,4 @@ public class Url {
         urlCheck.setUrl(this);
         urlChecks.add(urlCheck);
     }
-
-    public void removeUrlCheck(UrlCheck urlCheck) {
-        urlCheck.setUrl(null);
-        urlChecks.remove(urlCheck);
-    }
 }

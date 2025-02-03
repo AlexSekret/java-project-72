@@ -1,5 +1,6 @@
 @import gg.jte.Content
 @import hexlet.code.dto.BasePage
+@import hexlet.code.utils.NamedRoutes
 @param Content content
 @param BasePage page = null
 
@@ -27,15 +28,15 @@
 @endif
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">Анализатор страниц</a>
+        <a class="navbar-brand" href="${NamedRoutes.root()}">Анализатор страниц</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <div class="navbar-nav">
-                <a class="nav-link" href="/">Главная</a>
-                <a class="nav-link" href="/urls">Сайты</a>
+                <a class="nav-link" href="${NamedRoutes.root()}">Главная</a>
+                <a class="nav-link" href="${NamedRoutes.urlsIndex()}">Сайты</a>
             </div>
         </div>
     </div>

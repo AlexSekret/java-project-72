@@ -7,8 +7,8 @@ import gg.jte.TemplateEngine;
 import gg.jte.resolve.ResourceCodeResolver;
 import hexlet.code.controller.RootController;
 import hexlet.code.controller.UrlsController;
-
 import hexlet.code.repository.BaseRepository;
+import hexlet.code.utils.NamedRoutes;
 import io.javalin.Javalin;
 import io.javalin.rendering.template.JavalinJte;
 
@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 
 
 public class App {
-    //Перечитать теорию про обработку исключений.
-    //Реализовать нормальную обработку исключений.
     public static void main(String[] args) {
         try {
             Javalin app = getApp();
@@ -50,20 +48,18 @@ public class App {
             config.fileRenderer(new JavalinJte(createTemplateEngine()));
         });
 
-        app.get("/", RootController::index);
-        app.get("/urls", UrlsController::index);
-        app.post("/urls", UrlsController::addUrl);
-        app.get("/urls/{id}", UrlsController::show);
-        app.post("/urls/{id}/check", UrlsController::check);
-
+        app.get(NamedRoutes.root(), RootController::index);
+        app.get(NamedRoutes.urlsIndex(), UrlsController::index);
+        app.post(NamedRoutes.urlsIndex(), UrlsController::addUrl);
+        app.get(NamedRoutes.urlShow("{id}"), UrlsController::show);
+        app.post(NamedRoutes.urlCheck("{id}"), UrlsController::check);
         return app;
     }
 
     private static TemplateEngine createTemplateEngine() {
         ClassLoader classLoader = App.class.getClassLoader();
         ResourceCodeResolver codeResolver = new ResourceCodeResolver("templates", classLoader);
-        TemplateEngine templateEngine = TemplateEngine.create(codeResolver, ContentType.Html);
-        return templateEngine;
+        return TemplateEngine.create(codeResolver, ContentType.Html);
     }
 
     private static int getPort() {

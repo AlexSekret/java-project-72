@@ -6,6 +6,7 @@ import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
+import hexlet.code.utils.NamedRoutes;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import kong.unirest.HttpResponse;
@@ -24,7 +25,6 @@ import static io.javalin.rendering.template.TemplateUtil.model;
 
 public class UrlsController {
 
-    //обработчик запускается, когда с главной страницы "/" прилетает POST-запрос с URL
     public static void addUrl(Context ctx) {
         try {
             String rawURI = ctx.formParam("url");
@@ -34,18 +34,18 @@ public class UrlsController {
             String name = protocol + "://" + authority;
             if (UrlRepository.search(name).isPresent()) {
                 ctx.sessionAttribute("flash", "Страница уже существует");
-                ctx.redirect("/");
+                ctx.redirect(NamedRoutes.root());
             } else {
                 UrlRepository.save(new Url(name));
                 ctx.sessionAttribute("flash", "Страница успешно добавлена");
-                ctx.redirect("/urls");
+                ctx.redirect(NamedRoutes.urlsIndex());
             }
         } catch (MalformedURLException | IllegalArgumentException | NullPointerException e) {
             ctx.sessionAttribute("flash", "Некорректный URL");
-            ctx.redirect("/");
+            ctx.redirect(NamedRoutes.root());
         } catch (SQLException e) {
             ctx.sessionAttribute("flash", e.getMessage());
-            ctx.redirect("/");
+            ctx.redirect(NamedRoutes.root());
         }
     }
 
@@ -98,11 +98,10 @@ public class UrlsController {
             url.addUrlCheck(urlCheck);
             UrlCheckRepository.save(urlCheck);
             ctx.sessionAttribute("flash", "Страница успешно проверена");
-            ctx.redirect("/urls/" + urlId);
+            ctx.redirect(NamedRoutes.urlShow(urlId));
         } catch (Exception e) {
             ctx.sessionAttribute("flash", "Некорректный адрес");
-            ctx.redirect("/urls/" + urlId);
+            ctx.redirect(NamedRoutes.urlShow(urlId));
         }
     }
-
 }

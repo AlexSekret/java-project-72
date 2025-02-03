@@ -1,6 +1,7 @@
 @import java.time.format.DateTimeFormatter
 @import java.time.format.FormatStyle
 @import hexlet.code.dto.UrlCheckPage
+@import hexlet.code.utils.NamedRoutes
 @param UrlCheckPage page
 
 @template.layout.page(
@@ -26,7 +27,7 @@ content = @`
         </table>
 
         <h2 class="mt-5">Проверки</h2>
-        <form method="post" action="/urls/${page.getUrl().getId()}/check">
+        <form method="post" action="${NamedRoutes.urlCheck(page.getUrl().getId())}">
             <button type="submit" class="btn btn-primary">Запустить проверку</button>
         </form>
 

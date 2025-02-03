@@ -16,7 +16,6 @@ public class UrlCheck {
     private String h1;
     private String description;
     private Timestamp createdAt;
-    //    private Long urlId;
     private Url url;
 
     public UrlCheck(String h1, int responseStatus, String title, String description) {

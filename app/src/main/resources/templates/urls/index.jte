@@ -1,4 +1,5 @@
 @import hexlet.code.dto.UrlsPage
+@import hexlet.code.utils.NamedRoutes
 @import java.time.format.DateTimeFormatter
 @import java.time.format.FormatStyle;
 
@@ -25,7 +26,7 @@ content = @`
                         ${url.getId()}
                     </td>
                     <td>
-                        <a href="/urls/${url.getId()}">${url.getName()}</a>
+                        <a href="${NamedRoutes.urlShow(url.getId())}">${url.getName()}</a>
                     </td>
                     <td>
                         @if(!(url.getUrlChecks().isEmpty()))
