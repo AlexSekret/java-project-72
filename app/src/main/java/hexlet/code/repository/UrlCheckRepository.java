@@ -9,7 +9,9 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UrlCheckRepository extends BaseRepository {
     public static void save(UrlCheck urlCheck) throws SQLException {
@@ -57,5 +59,36 @@ public class UrlCheckRepository extends BaseRepository {
             }
             return result;
         }
+    }
+
+    public static Map<Long, Timestamp> getLastDateChecks() throws SQLException {
+        String sql = "SELECT DISTINCT ON (url_id) url_id, created_at FROM url_checks ORDER BY url_id, created_at DESC";
+        Map<Long, Timestamp> result = new HashMap<>();
+        try (var conn = dataSource.getConnection();
+             var prepareStatement = conn.prepareStatement(sql)) {
+            ResultSet resultSet = prepareStatement.executeQuery();
+            while (resultSet.next()) {
+                Long id = resultSet.getLong("url_id");
+                Timestamp createdAt = resultSet.getTimestamp("created_at");
+                result.put(id, createdAt);
+            }
+        }
+        return result;
+    }
+
+    public static Map<Long, Integer> getLastStatusChecks() throws SQLException {
+        String sql = "SELECT DISTINCT ON (url_id) url_id, created_at, status_code FROM url_checks"
+                + " ORDER BY url_id, created_at DESC";
+        Map<Long, Integer> result = new HashMap<>();
+        try (var conn = dataSource.getConnection();
+             var prepareStatement = conn.prepareStatement(sql)) {
+            ResultSet resultSet = prepareStatement.executeQuery();
+            while (resultSet.next()) {
+                Long id = resultSet.getLong("url_id");
+                Integer statusCode = resultSet.getInt("status_code");
+                result.put(id, statusCode);
+            }
+        }
+        return result;
     }
 }

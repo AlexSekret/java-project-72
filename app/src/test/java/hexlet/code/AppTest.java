@@ -27,13 +27,16 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 class AppTest {
     static Javalin app;
-    static MockWebServer mockServer;
-    static String baseUrl;
+    static MockWebServer goodMockServer;
+    static MockWebServer badMockServer;
+    static String goodBaseUrl;
+    static String badBaseUrl;
 
     private static Path getFixturePath(String fileName) {
         return Paths.get("src", "test", "resources", "fixtures", fileName)
@@ -47,13 +50,19 @@ class AppTest {
 
     @BeforeAll
     static void startMockWebServer() throws Exception {
-        mockServer = new MockWebServer();
+        goodMockServer = new MockWebServer();
+        badMockServer = new MockWebServer();
         MockResponse goodMockedResponse = new MockResponse()
                 .setBody(readFixture("goodCase.html"));
-        mockServer.enqueue(goodMockedResponse);
-        mockServer.enqueue(goodMockedResponse);
-        mockServer.start();
-        baseUrl = mockServer.url("/").toString().replaceAll("/$", "");
+        MockResponse badMockedResponse = new MockResponse()
+                .setBody(readFixture("badCase.html"));
+        goodMockServer.enqueue(goodMockedResponse);
+        goodMockServer.enqueue(goodMockedResponse);
+        badMockServer.enqueue(badMockedResponse);
+        goodMockServer.start();
+        badMockServer.start();
+        goodBaseUrl = goodMockServer.url("/").toString().replaceAll("/$", "");
+        badBaseUrl = badMockServer.url("/").toString().replaceAll("/$", "");
     }
 
     @AfterAll
@@ -62,7 +71,8 @@ class AppTest {
         if (app != null) {
             app.stop();
         }
-        mockServer.shutdown();
+        goodMockServer.shutdown();
+        badMockServer.shutdown();
     }
 
     @BeforeEach
@@ -176,8 +186,8 @@ class AppTest {
     @Test
     void testCheckCorrectUrlIsSuccess() throws SQLException {
         JavalinTest.test(app, (server, client) -> {
-            client.post(NamedRoutes.urlsIndex(), "url=" + baseUrl);
-            Long id = UrlRepository.search(baseUrl).get().getId();
+            client.post(NamedRoutes.urlsIndex(), "url=" + goodBaseUrl);
+            Long id = UrlRepository.search(goodBaseUrl).get().getId();
             var response = client.post(NamedRoutes.urlCheck(id));
             var body = response.body().string();
             assertThat(response.code()).isEqualTo(200);
@@ -206,6 +216,33 @@ class AppTest {
             assertEquals(expectedH1, url.getLastUrlCheck().getH1());
             var checksNumber2 = UrlCheckRepository.getEntities(id).size();
             assertEquals(checksNumber2, 2);
+        });
+    }
+
+    @Test
+    void testCheckCorrectUrlHasIncopleteResponse() throws SQLException {
+        JavalinTest.test(app, (server, client) -> {
+            client.post(NamedRoutes.urlsIndex(), "url=" + badBaseUrl);
+            Long id = UrlRepository.search(badBaseUrl).get().getId();
+            var response = client.post(NamedRoutes.urlCheck(id));
+            var body = response.body().string();
+            assertThat(response.code()).isEqualTo(200);
+            assertTrue(body.contains("<td>1</td>"));
+            assertTrue(body.contains("<td>200</td>"));
+            assertFalse(body.contains("<td>Тестовый заголовок с тегом title</td>"));
+            assertTrue(body.contains("<td>Тестовый заголовок</td>"));
+            assertFalse(body.contains("<td>Описание description</td>"));
+            var checksNumber = UrlCheckRepository.getEntities(id).size();
+            assertEquals(checksNumber, 1);
+
+            var url = UrlRepository.find(id).get();
+            var urlChecks = UrlCheckRepository.getEntities(id);
+            for (var urlCheck : urlChecks) {
+                url.addUrlCheck(urlCheck);
+            }
+            var expectedH1 = "Тестовый заголовок";
+            assertEquals(1, url.getLastUrlCheck().getId());
+            assertEquals(expectedH1, url.getLastUrlCheck().getH1());
         });
     }
 }

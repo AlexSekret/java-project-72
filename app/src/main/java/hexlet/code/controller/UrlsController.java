@@ -13,12 +13,15 @@ import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 import static io.javalin.rendering.template.TemplateUtil.model;
 
@@ -51,13 +54,9 @@ public class UrlsController {
 
     public static void index(Context ctx) throws SQLException {
         List<Url> urls = UrlRepository.getEntities();
-        for (var url : urls) {
-            List<UrlCheck> checks = UrlCheckRepository.getEntities(url.getId());
-            for (var check : checks) {
-                url.addUrlCheck(check);
-            }
-        }
-        UrlsPage page = new UrlsPage(urls);
+        Map<Long, Timestamp> dateChecks = UrlCheckRepository.getLastDateChecks();
+        Map<Long, Integer> statusChecks = UrlCheckRepository.getLastStatusChecks();
+        UrlsPage page = new UrlsPage(urls, dateChecks, statusChecks);
         page.setFlash(ctx.consumeSessionAttribute("flash"));
         page.setResult("success");
         ctx.render("urls/index.jte", model("page", page));
@@ -90,11 +89,16 @@ public class UrlsController {
             HttpResponse<String> response = Unirest.get(url.getName()).asString();
             Document body = Jsoup.parse(response.getBody());
             int responseStatus = response.getStatus();
-            String h1 = body.selectFirst("h1").text();
-            String title = body.title();
-            String description = body.selectFirst("meta[name=description]").attr("content");
 
-            UrlCheck urlCheck = new UrlCheck(h1, responseStatus, title, description);
+            Element h1 = body.selectFirst("h1");
+            String header = (h1 == null) ? "" : h1.text();
+
+            String title = body.title();
+
+            Element descr = body.selectFirst("meta[name=description]");
+            String description = (descr == null) ? "" : descr.attr("content");
+
+            UrlCheck urlCheck = new UrlCheck(header, responseStatus, title, description);
             url.addUrlCheck(urlCheck);
             UrlCheckRepository.save(urlCheck);
             ctx.sessionAttribute("flash", "Страница успешно проверена");
