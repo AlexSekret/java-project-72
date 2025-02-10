@@ -74,7 +74,7 @@ public class UrlRepository extends BaseRepository {
         try (var conn = dataSource.getConnection();
              var prepareStatement = conn.prepareStatement(sql)) {
             ResultSet resultSet = prepareStatement.executeQuery();
-            ArrayList<Url> result = new ArrayList<Url>();
+            ArrayList<Url> result = new ArrayList<>();
             while (resultSet.next()) {
                 long id = resultSet.getLong("id");
                 String name = resultSet.getString("name");

@@ -1,9 +1,7 @@
 @import hexlet.code.dto.UrlsPage
 @import hexlet.code.utils.NamedRoutes
-@import java.sql.Timestamp
 @import java.time.format.DateTimeFormatter
-@import java.time.format.FormatStyle;
-
+@import java.time.format.FormatStyle
 
 @param UrlsPage page
 @template.layout.page(
@@ -30,13 +28,13 @@ content = @`
                         <a href="${NamedRoutes.urlShow(url.getId())}">${url.getName()}</a>
                     </td>
                     <td>
-                        @if(page.getLastDateCheck().containsKey(url.getId()))
-                            ${DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(page.getLastDateCheck().get(url.getId()).toLocalDateTime())}
+                        @if(page.getLastCheck().containsKey(url.getId()))
+                            ${DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(page.getLastCheck().get(url.getId()).getCreatedAt().toLocalDateTime())}
                         @endif
                     </td>
                     <td>
-                        @if(page.getLastStatusCheck().containsKey(url.getId()))
-                            ${page.getLastStatusCheck().get(url.getId())}
+                        @if(page.getLastCheck().containsKey(url.getId()))
+                            ${page.getLastCheck().get(url.getId()).getStatusCode()}
                         @endif
                     </td>
                 </tr>

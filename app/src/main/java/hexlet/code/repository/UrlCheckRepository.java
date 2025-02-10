@@ -61,32 +61,25 @@ public class UrlCheckRepository extends BaseRepository {
         }
     }
 
-    public static Map<Long, Timestamp> getLastDateChecks() throws SQLException {
-        String sql = "SELECT DISTINCT ON (url_id) url_id, created_at FROM url_checks ORDER BY url_id, created_at DESC";
-        Map<Long, Timestamp> result = new HashMap<>();
+    public static Map<Long, UrlCheck> getLastChecks() throws SQLException {
+        String sql = "SELECT DISTINCT ON (url_id) id, url_id,status_code, h1, title, description, created_at"
+                + " FROM url_checks ORDER BY url_id, created_at DESC";
+        Map<Long, UrlCheck> result = new HashMap<>();
         try (var conn = dataSource.getConnection();
              var prepareStatement = conn.prepareStatement(sql)) {
             ResultSet resultSet = prepareStatement.executeQuery();
             while (resultSet.next()) {
-                Long id = resultSet.getLong("url_id");
+                Long id = resultSet.getLong("id");
+                Long urlId = resultSet.getLong("url_id");
+                int statusCode = resultSet.getInt("status_code");
+                String h1 = resultSet.getString("h1");
+                String title = resultSet.getString("title");
+                String description = resultSet.getString("description");
                 Timestamp createdAt = resultSet.getTimestamp("created_at");
-                result.put(id, createdAt);
-            }
-        }
-        return result;
-    }
-
-    public static Map<Long, Integer> getLastStatusChecks() throws SQLException {
-        String sql = "SELECT DISTINCT ON (url_id) url_id, created_at, status_code FROM url_checks"
-                + " ORDER BY url_id, created_at DESC";
-        Map<Long, Integer> result = new HashMap<>();
-        try (var conn = dataSource.getConnection();
-             var prepareStatement = conn.prepareStatement(sql)) {
-            ResultSet resultSet = prepareStatement.executeQuery();
-            while (resultSet.next()) {
-                Long id = resultSet.getLong("url_id");
-                Integer statusCode = resultSet.getInt("status_code");
-                result.put(id, statusCode);
+                UrlCheck urlCheck = new UrlCheck(h1, statusCode, title, description);
+                urlCheck.setId(id);
+                urlCheck.setCreatedAt(createdAt);
+                result.put(urlId, urlCheck);
             }
         }
         return result;

@@ -19,7 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +30,7 @@ public class UrlsController {
     public static void addUrl(Context ctx) {
         try {
             String rawURI = ctx.formParam("url");
-            URL url = URI.create(rawURI).toURL();
+            URL url = URI.create(rawURI != null ? rawURI : "").toURL();
             String protocol = url.getProtocol();
             String authority = url.getAuthority();
             String name = protocol + "://" + authority;
@@ -54,9 +53,8 @@ public class UrlsController {
 
     public static void index(Context ctx) throws SQLException {
         List<Url> urls = UrlRepository.getEntities();
-        Map<Long, Timestamp> dateChecks = UrlCheckRepository.getLastDateChecks();
-        Map<Long, Integer> statusChecks = UrlCheckRepository.getLastStatusChecks();
-        UrlsPage page = new UrlsPage(urls, dateChecks, statusChecks);
+        Map<Long, UrlCheck> lastChecks = UrlCheckRepository.getLastChecks();
+        UrlsPage page = new UrlsPage(urls, lastChecks);
         page.setFlash(ctx.consumeSessionAttribute("flash"));
         page.setResult("success");
         ctx.render("urls/index.jte", model("page", page));
@@ -67,17 +65,17 @@ public class UrlsController {
         Url url = UrlRepository.find(id)
                 .orElseThrow(() -> new NotFoundResponse("URL with id = " + id + " not found"));
         List<UrlCheck> checks = UrlCheckRepository.getEntities(url.getId());
+        UrlCheckPage page;
         if (!checks.isEmpty()) {
-            UrlCheckPage page = new UrlCheckPage(checks, url);
+            page = new UrlCheckPage(checks, url);
             page.setFlash(ctx.consumeSessionAttribute("flash"));
             page.setResult("success");
-            ctx.render("urls/show.jte", model("page", page));
         } else {
-            UrlCheckPage page = new UrlCheckPage(List.of(), url);
+            page = new UrlCheckPage(List.of(), url);
             page.setFlash(ctx.consumeSessionAttribute("flash"));
             page.setResult("alert");
-            ctx.render("urls/show.jte", model("page", page));
         }
+        ctx.render("urls/show.jte", model("page", page));
 
     }
 

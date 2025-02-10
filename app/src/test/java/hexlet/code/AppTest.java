@@ -2,6 +2,7 @@ package hexlet.code;
 
 
 import hexlet.code.model.Url;
+import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import hexlet.code.utils.NamedRoutes;
@@ -23,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -184,11 +186,11 @@ class AppTest {
     }
 
     @Test
-    void testCheckCorrectUrlIsSuccess() throws SQLException {
+    void testCheckCorrectUrlIsSuccess() {
         JavalinTest.test(app, (server, client) -> {
             client.post(NamedRoutes.urlsIndex(), "url=" + goodBaseUrl);
-            Long id = UrlRepository.search(goodBaseUrl).get().getId();
-            var response = client.post(NamedRoutes.urlCheck(id));
+            Long urlId = UrlRepository.search(goodBaseUrl).get().getId();
+            var response = client.post(NamedRoutes.urlCheck(urlId));
             var body = response.body().string();
             assertThat(response.code()).isEqualTo(200);
             assertTrue(body.contains("<td>1</td>"));
@@ -196,9 +198,9 @@ class AppTest {
             assertTrue(body.contains("<td>Тестовый заголовок с тегом title</td>"));
             assertTrue(body.contains("<td>Тестовый заголовок первого уровня</td>"));
             assertTrue(body.contains("<td>Описание description</td>"));
-            var checksNumber = UrlCheckRepository.getEntities(id).size();
-            assertEquals(checksNumber, 1);
-            var response2 = client.post(NamedRoutes.urlCheck(id));
+            var checksCount = UrlCheckRepository.getEntities(urlId).size();
+            assertEquals(1, checksCount);
+            var response2 = client.post(NamedRoutes.urlCheck(urlId));
             var body2 = response2.body().string();
             assertThat(response2.code()).isEqualTo(200);
             assertTrue(body2.contains("<td>2</td>"));
@@ -206,21 +208,24 @@ class AppTest {
             assertTrue(body2.contains("<td>Тестовый заголовок с тегом title</td>"));
             assertTrue(body2.contains("<td>Тестовый заголовок первого уровня</td>"));
             assertTrue(body2.contains("<td>Описание description</td>"));
-            var url = UrlRepository.find(id).get();
-            var urlChecks = UrlCheckRepository.getEntities(id);
+            var url = UrlRepository.find(urlId).get();
+            var urlChecks = UrlCheckRepository.getEntities(urlId);
             for (var urlCheck : urlChecks) {
                 url.addUrlCheck(urlCheck);
             }
+            var expectedId = 2;
             var expectedH1 = "Тестовый заголовок первого уровня";
-            assertEquals(2, url.getLastUrlCheck().getId());
+            assertEquals(expectedId, url.getLastUrlCheck().getId());
             assertEquals(expectedH1, url.getLastUrlCheck().getH1());
-            var checksNumber2 = UrlCheckRepository.getEntities(id).size();
+            var checksNumber2 = UrlCheckRepository.getEntities(urlId).size();
             assertEquals(checksNumber2, 2);
+            Map<Long, UrlCheck> checks = UrlCheckRepository.getLastChecks();
+            assertTrue(checks.containsKey(urlId));
         });
     }
 
     @Test
-    void testCheckCorrectUrlHasIncopleteResponse() throws SQLException {
+    void testCheckCorrectUrlHasIncopleteResponse() {
         JavalinTest.test(app, (server, client) -> {
             client.post(NamedRoutes.urlsIndex(), "url=" + badBaseUrl);
             Long id = UrlRepository.search(badBaseUrl).get().getId();
@@ -241,7 +246,8 @@ class AppTest {
                 url.addUrlCheck(urlCheck);
             }
             var expectedH1 = "Тестовый заголовок";
-            assertEquals(1, url.getLastUrlCheck().getId());
+            Long expectedId = 1L;
+            assertEquals(expectedId, url.getLastUrlCheck().getId());
             assertEquals(expectedH1, url.getLastUrlCheck().getH1());
         });
     }
